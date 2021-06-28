@@ -1,7 +1,7 @@
 # Pterodactyl Packet Watch
 
 ## Description
-A [fork](https://github.com/gamemann/Pterodactyl-Game-Server-Watch) of Pterodactyl Game Server Watch. This version basically sends specified packet types and if the average response time (in milliseconds) goes beyond a specified threshold, misc options (web hooks) will be performed.
+A project based off of my Pterodactyl Game Server Watch [tool](https://github.com/gamemann/Pterodactyl-Game-Server-Watch). This specific project basically sends specified packet types and if the average response time (in milliseconds) goes beyond a specified threshold, misc options (web hooks) will be performed.
 
 ## Command Line Flags
 There is only one command line argument/flag and it is `-cfg=<path>`. This argument/flag changes the path to the Pteropckt config file. The default value is `/etc/pteropckt/pteropckt.conf`.
@@ -179,14 +179,14 @@ Here are the Discord web hook's default values.
 * `avatarurl` => *empty* (default)
 
 ## Configuration Example
-You may find config examples in the [tests/](https://github.com/GFLClan/Pterodactyl-PacketWatch/tree/master/tests) directory.
+You may find config examples in the [tests/](https://github.com/gamemann/Pterodactyl-Packet-Watch/tree/master/tests) directory.
 
 ## Building
 You may use `git` and `go build` to build this project and produce a binary. I'd suggest cloning this to `$GOPATH` so there aren't problems with linking modules. For example:
 
 ```
 cd <Path To One $GOPATH>
-git clone https://github.com/GFLClan/Pterodactyl-PacketWatch.git
+git clone https://github.com/gamemann/Pterodactyl-Packet-Watch.git
 cd Pterodactyl-PacketWatch
 go build -o pteropckt
 ```
