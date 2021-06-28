@@ -1,7 +1,6 @@
 package pterodactyl
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -94,7 +93,7 @@ func AddServers(cfg *config.Config) bool {
 		resp.Body.Close()
 
 		// Loop through each data item (server).
-		for _, j := range dataobj.(map[string]interface{})["data"].([]interface{}) {
+		for z, j := range dataobj.(map[string]interface{})["data"].([]interface{}) {
 			item := j.(map[string]interface{})
 
 			// Make sure we have a server object.
@@ -110,13 +109,11 @@ func AddServers(cfg *config.Config) bool {
 				sta.Name = attr["name"].(string)
 
 				sta.Enable = cfg.DefEnable
-				sta.ScanTime = cfg.DefScanTime
-				sta.MaxFails = cfg.DefMaxFails
-				sta.MaxRestarts = cfg.DefMaxRestarts
-				sta.RestartInt = cfg.DefRestartInt
-				sta.ReportOnly = cfg.DefReportOnly
-				sta.A2STimeout = cfg.DefA2STimeout
+				sta.Threshold = cfg.DefThreshold
+				sta.Count = cfg.DefCount
+				sta.Interval = cfg.DefInterval
 				sta.Mentions = cfg.DefMentions
+				sta.Timeout = cfg.DefTimeout
 
 				// Retrieve default IP/port.
 				for _, i := range attr["relationships"].(map[string]interface{})["allocations"].(map[string]interface{})["data"].([]interface{}) {
@@ -128,7 +125,7 @@ func AddServers(cfg *config.Config) bool {
 
 					if alloc["assigned"].(bool) {
 						sta.IP = alloc["ip"].(string)
-						sta.Port = int(alloc["port"].(float64))
+						sta.Port = uint(alloc["port"].(float64))
 					}
 				}
 
@@ -154,58 +151,71 @@ func AddServers(cfg *config.Config) bool {
 						}
 
 						// Check for IP override.
-						if vari["env_variable"].(string) == "PTEROWATCH_IP" {
+						if vari["env_variable"].(string) == "PTEROPACKET_IP" {
 							sta.IP = val
 						}
 
 						// Check for port override.
-						if vari["env_variable"].(string) == "PTEROWATCH_PORT" {
-							sta.Port, _ = strconv.Atoi(val)
-						}
+						if vari["env_variable"].(string) == "PTEROPACKET_PORT" {
+							tmp, err := strconv.ParseUint(val, 10, 16)
 
-						// Check for scan override.
-						if vari["env_variable"].(string) == "PTEROWATCH_SCANTIME" {
-							sta.ScanTime, _ = strconv.Atoi(val)
-						}
-
-						// Check for max fails override.
-						if vari["env_variable"].(string) == "PTEROWATCH_MAXFAILS" {
-							sta.MaxFails, _ = strconv.Atoi(val)
-						}
-
-						// Check for max restarts override.
-						if vari["env_variable"].(string) == "PTEROWATCH_MAXRESTARTS" {
-							sta.MaxRestarts, _ = strconv.Atoi(val)
-						}
-
-						// Check for restart interval override.
-						if vari["env_variable"].(string) == "PTEROWATCH_RESTARTINT" {
-							sta.RestartInt, _ = strconv.Atoi(val)
-						}
-
-						// Check for A2S_INFO timeout override.
-						if vari["env_variable"].(string) == "PTEROWATCH_A2STIMEOUT" {
-							sta.A2STimeout, _ = strconv.Atoi(val)
-						}
-
-						// Check for mentions override.
-						if vari["env_variable"].(string) == "PTEROWATCH_MENTIONS" {
-							sta.Mentions = val
-						}
-
-						// Check for report only override.
-						if vari["env_variable"].(string) == "PTEROWATCH_REPORTONLY" {
-							reportonly, _ := strconv.Atoi(val)
-
-							if reportonly > 0 {
-								sta.ReportOnly = true
-							} else {
-								sta.ReportOnly = false
+							if err == nil {
+								sta.Port = uint(tmp)
 							}
 						}
 
+						// Check for threshold override.
+						if vari["env_variable"].(string) == "PTEROPACKET_THRESHOLD" {
+							tmp, _ := strconv.ParseUint(val, 10, 16)
+
+							if err == nil {
+								sta.Threshold = uint32(tmp)
+							}
+						}
+
+						// Check for count override.
+						if vari["env_variable"].(string) == "PTEROPACKET_COUNT" {
+							tmp, _ := strconv.ParseUint(val, 10, 16)
+
+							if err == nil {
+								sta.Count = uint(tmp)
+							}
+						}
+
+						// Check for interval override.
+						if vari["env_variable"].(string) == "PTEROPACKET_INTERVAL" {
+							tmp, _ := strconv.ParseUint(val, 10, 16)
+
+							if err == nil {
+								sta.Interval = uint(tmp)
+							}
+						}
+
+						// Check for timeout override.
+						if vari["env_variable"].(string) == "PTEROPACKET_TIMEOUT" {
+							tmp, _ := strconv.ParseUint(val, 10, 16)
+
+							if err == nil {
+								sta.Timeout = uint(tmp)
+							}
+						}
+
+						// Check for packets override.
+						if vari["env_variable"].(string) == "PTEROPACKET_INTERVAL" {
+							err := json.Unmarshal([]byte(val), &cfg.Servers[z].Packets)
+
+							if err != nil {
+								fmt.Printf("Error parsing packets JSON for server %s (%s:%d:%s).\nError => %v", sta.Name, sta.IP, sta.Port, sta.UID, err)
+							}
+						}
+
+						// Check for mentions override.
+						if vari["env_variable"].(string) == "PTEROPACKET_MENTIONS" {
+							sta.Mentions = val
+						}
+
 						// Check for disable override.
-						if vari["env_variable"].(string) == "PTEROWATCH_DISABLE" {
+						if vari["env_variable"].(string) == "PTEROPACKET_DISABLE" {
 							disable, _ := strconv.Atoi(val)
 
 							if disable > 0 {
@@ -293,68 +303,4 @@ func CheckStatus(cfg *config.Config, uid string) bool {
 
 	// Otherwise, return true meaning the container is online.
 	return true
-}
-
-// Kills the specified server.
-func KillServer(cfg *config.Config, uid string) {
-	// Build endpoint.
-	urlstr := cfg.APIURL + "/" + "api/client/servers/" + uid + "/" + "power"
-
-	// Setup form data.
-	var formdata = []byte(`{"signal": "kill"}`)
-
-	// Setup HTTP GET request.
-	client := &http.Client{Timeout: time.Second * 5}
-	req, _ := http.NewRequest("POST", urlstr, bytes.NewBuffer(formdata))
-
-	// Set authorization header.
-	req.Header.Set("Authorization", "Bearer "+cfg.Token)
-
-	// Set data to JSON.
-	req.Header.Set("Content-Type", "application/json")
-
-	// Accept JSON.
-	req.Header.Set("Accept", "application/json")
-
-	// Perform HTTP request and check for errors.
-	resp, err := client.Do(req)
-
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	// Close body at the end.
-	resp.Body.Close()
-}
-
-// Starts the specified server.
-func StartServer(cfg *config.Config, uid string) {
-	// Build endpoint.
-	urlstr := cfg.APIURL + "/" + "api/client/servers/" + uid + "/" + "power"
-
-	// Setup form data.
-	var formdata = []byte(`{"signal": "start"}`)
-
-	// Setup HTTP GET request.
-	client := &http.Client{Timeout: time.Second * 5}
-	req, _ := http.NewRequest("POST", urlstr, bytes.NewBuffer(formdata))
-
-	// Set authorization header.
-	req.Header.Set("Authorization", "Bearer "+cfg.Token)
-
-	// Set data to JSON.
-	req.Header.Set("Content-Type", "application/json")
-
-	// Accept JSON.
-	req.Header.Set("Accept", "application/json")
-
-	// Perform HTTP request and check for errors.
-	resp, err := client.Do(req)
-
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	// Close body at the end.
-	resp.Body.Close()
 }

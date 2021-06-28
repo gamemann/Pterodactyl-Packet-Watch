@@ -6,22 +6,35 @@ import (
 	"os"
 )
 
+// Packet types.
+type Packet struct {
+	Name       string `json:"name"`
+	Request    []byte `json:"data"`
+	Interval   uint   `json:"interval"`
+	Threshold  uint32 `json:"threshold"`
+	Count      uint   `json:"count"`
+	Timeout    uint   `json:"timeout"`
+	MaxDetects uint   `json:"maxdetects"`
+	Cooldown   uint   `json:"cooldown"`
+}
+
 // Server struct used for each server config.
 type Server struct {
-	Name        string `json:"name"`
-	Enable      bool   `json:"enable"`
-	IP          string `json:"ip"`
-	Port        int    `json:"port"`
-	UID         string `json:"uid"`
-	ScanTime    int    `json:"scantime"`
-	MaxFails    int    `json:"maxfails"`
-	MaxRestarts int    `json:"maxrestarts"`
-	RestartInt  int    `json:"restartint"`
-	ReportOnly  bool   `json:"reportonly"`
-	A2STimeout  int    `json:"a2stimeout"`
-	Mentions    string `json:"mentions"`
-	ViaAPI      bool
-	Delete      bool
+	Name       string   `json:"name"`
+	Enable     bool     `json:"enable"`
+	IP         string   `json:"ip"`
+	Port       uint     `json:"port"`
+	UID        string   `json:"uid"`
+	Interval   uint     `json:"interval"`
+	Threshold  uint32   `json:"threshold"`
+	Count      uint     `json:"count"`
+	Timeout    uint     `json:"timeout"`
+	MaxDetects uint     `json:"maxdetects"`
+	Cooldown   uint     `json:"cooldown"`
+	Packets    []Packet `json:"packets"`
+	Mentions   string   `json:"mentions"`
+	ViaAPI     bool
+	Delete     bool
 }
 
 // Misc options.
@@ -32,23 +45,23 @@ type Misc struct {
 
 // Config struct used for the general config.
 type Config struct {
-	APIURL         string   `json:"apiurl"`
-	Token          string   `json:"token"`
-	AppToken       string   `json:"apptoken"`
-	AddServers     bool     `json:"addservers"`
-	DebugLevel     int      `json:"debug"`
-	ReloadTime     int      `json:"reloadtime"`
-	DefEnable      bool     `json:"defenable"`
-	DefScanTime    int      `json:"defscantime"`
-	DefMaxFails    int      `json:"defmaxfails"`
-	DefMaxRestarts int      `json:"defmaxrestarts"`
-	DefRestartInt  int      `json:"defrestartint"`
-	DefReportOnly  bool     `json:"defreportonly"`
-	DefA2STimeout  int      `json:"defa2stimeout"`
-	DefMentions    string   `json:"defmentions"`
-	Servers        []Server `json:"servers"`
-	Misc           []Misc   `json:"misc"`
-	ConfLoc        string
+	APIURL        string   `json:"apiurl"`
+	Token         string   `json:"token"`
+	AppToken      string   `json:"apptoken"`
+	AddServers    bool     `json:"addservers"`
+	DebugLevel    uint     `json:"debug"`
+	ReloadTime    uint     `json:"reloadtime"`
+	DefEnable     bool     `json:"defenable"`
+	DefThreshold  uint32   `json:"defthreshold"`
+	DefCount      uint     `json:"defcount"`
+	DefInterval   uint     `json:"definterval"`
+	DefTimeout    uint     `json:"deftimeout"`
+	DefMaxDetects uint     `json:"defmaxdetects"`
+	DefCooldown   uint     `json:"defcooldown"`
+	DefMentions   string   `json:"defmentions"`
+	Servers       []Server `json:"servers"`
+	Misc          []Misc   `json:"misc"`
+	ConfLoc       string
 }
 
 // Reads a config file based off of the file name (string) and returns a Config struct.
@@ -97,10 +110,10 @@ func (cfg *Config) SetDefaults() {
 	cfg.ReloadTime = 500
 
 	cfg.DefEnable = true
-	cfg.DefScanTime = 5
-	cfg.DefMaxFails = 10
-	cfg.DefMaxRestarts = 2
-	cfg.DefRestartInt = 120
-	cfg.DefReportOnly = false
-	cfg.DefA2STimeout = 1
+	cfg.DefThreshold = 60
+	cfg.DefCount = 10
+	cfg.DefInterval = 5
+	cfg.DefTimeout = 5
+	cfg.DefMaxDetects = 2
+	cfg.DefCooldown = 120
 }

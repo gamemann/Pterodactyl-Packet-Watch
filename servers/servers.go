@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/GFLClan/Pterodactyl-PacketWatch/events"
 	"github.com/gamemann/Pterodactyl-Game-Server-Watch/config"
 	"github.com/gamemann/Pterodactyl-Game-Server-Watch/events"
 	"github.com/gamemann/Pterodactyl-Game-Server-Watch/pterodactyl"
@@ -15,7 +16,9 @@ import (
 var tickers []TickerHolder
 
 // Timer function.
-func ServerWatch(srv *config.Server, timer *time.Ticker, fails *int, restarts *int, nextscan *int64, conn *net.UDPConn, cfg *config.Config, destroy *chan bool) {
+func ServerWatch(srv *config.Server, pckt *config.Packet, timer *time.Ticker, laststats *[]uint32, avglatency *uint32, maxlatency *uint32, minlatency *uint32, detects *uint, conn *net.UDPConn, cfg *config.Config, destroy *chan bool) {
+	var nextscan int64
+
 	for {
 		select {
 		case <-timer.C:
@@ -36,58 +39,81 @@ func ServerWatch(srv *config.Server, timer *time.Ticker, fails *int, restarts *i
 				continue
 			}
 
-			// Send A2S_INFO request.
-			query.SendRequest(conn)
+			// Send request.
+			query.SendRequest(conn, pckt.Request)
 
 			if cfg.DebugLevel > 2 {
-				fmt.Println("[D3][" + srv.IP + ":" + strconv.Itoa(srv.Port) + "] A2S_INFO sent (" + srv.Name + ").")
+				fmt.Printf("[D2] Packet %s:%d:%s (%s) sent. Request data => % x\n", srv.IP, srv.Port, srv.UID, srv.Name, pckt.Request)
 			}
 
-			// Check for response. If no response, increase fail count. Otherwise, reset fail count to 0.
-			if !query.CheckResponse(conn, *srv) {
-				// Increase fail count.
-				*fails++
+			// Send the request and retrieve latency.
+			var latency uint32
+			var start uint32
+			var stop uint32
 
+			start = uint32(time.Since().Milliseconds())
+			resp := query.CheckResponse(conn, *srv)
+			stop = uint32(time.Since().Milliseconds())
+
+			if !resp {
 				if cfg.DebugLevel > 1 {
-					fmt.Println("[D2][" + srv.IP + ":" + strconv.Itoa(srv.Port) + "] Fails => " + strconv.Itoa(*fails))
+					fmt.Printf("[D2] Request timed out for %s:%d:%s (%s).\n", srv.IP, srv.Port, srv.UID, srv.Name)
 				}
 
-				// Check to see if we want to restart the server.
-				if *fails >= srv.MaxFails && *restarts < srv.MaxRestarts && *nextscan < time.Now().Unix() {
-					// Check if we want to restart the container.
-					if !srv.ReportOnly {
-						// Attempt to kill container.
-						pterodactyl.KillServer(cfg, srv.UID)
+				continue
+			} else {
+				latency = stop - start
+			}
 
-						// Now attempt to start it again.
-						pterodactyl.StartServer(cfg, srv.UID)
-					}
+			// Add into stats.
+			*laststats = append(*laststats, latency)
 
-					// Increment restarts count.
-					*restarts++
+			// Check if we need to remove the oldest.
+			if len(*laststats) > pckt.Count {
+				RemoveStat(laststats, 0)
+			}
 
-					// Set next scan time and ensure the restart interval is at least 1.
-					restartint := srv.RestartInt
+			// Calculate latencies.
+			var sum uint64
+			for _, stat := range *laststats {
+				sum += uint64(stat)
 
-					if restartint < 1 {
-						restartint = 120
-					}
+				if stat > *maxlatency {
+					*maxlatency = stat
+				}
 
-					// Get new scan time.
-					*nextscan = time.Now().Unix() + int64(restartint)
+				if stat < *minlatency {
+					*minlatency = stat
+				}
+			}
+
+			*avglatency = uint32(sum / uint64(len(*laststats)))
+
+			// Check average latency.
+			if *avglatency > pckt.Threshold {
+				// Increment detect count.
+				*detects++
+
+				if cfg.DebugLevel > 1 {
+					fmt.Printf("[D2] %s:%d:%d (%s). Detects => %d.\n", srv.IP, srv.Port, srv.UID, srv.Name, *detects)
+				}
+
+				// Check if we should report this.
+				if *detects < pckt.MaxDetects && time.Now().Unix() > nextscan {
+					// Update scan time.
+					nextscan = time.Now().Unix() + int64(pckt.Cooldown)
 
 					// Debug.
 					if cfg.DebugLevel > 0 {
-						fmt.Println("[D1][" + srv.IP + ":" + strconv.Itoa(srv.Port) + "] Server found down. Report Only => " + strconv.FormatBool(srv.ReportOnly) + ". Fail Count => " + strconv.Itoa(*fails) + ". Restart Count => " + strconv.Itoa(*restarts) + " (" + srv.Name + ").")
+						fmt.Printf("[D1] Reporting %s:%d:%s (%s). Average latency => %dms. Max latency => %dms. Min latency => %dms. Detects => %d.\n", srv.IP, srv.Port, srv.UID, srv.Name, *avglatency, *maxlatency, *minlatency, *detects)
 					}
 
-					events.OnServerDown(cfg, srv, *fails, *restarts)
+					events.OnDetect(cfg, srv, pckt, *avglatency, *maxlatency, *minlatency, *detects)
 				}
 			} else {
 				// Reset everything.
-				*fails = 0
-				*restarts = 0
-				*nextscan = 0
+				*detects = 0
+				nextscan = 0
 			}
 
 		case <-*destroy:
@@ -112,35 +138,37 @@ func HandleServers(cfg *config.Config, update bool) {
 	stats := make(map[Tuple]Stats)
 
 	// Retrieve current server stats before removing tickers
-	for _, srvticker := range tickers {
-		for _, srv := range cfg.Servers {
+	for _, ticker := range tickers {
+		for sid, srv := range cfg.Servers {
 			// Create tuple.
 			var srvt Tuple
 			srvt.IP = srv.IP
 			srvt.Port = srv.Port
 			srvt.UID = srv.UID
 
-			if cfg.DebugLevel > 4 {
-				fmt.Println("[D5] HandleServers :: Comparing " + srvt.IP + ":" + strconv.Itoa(srvt.Port) + ":" + srvt.UID + " == " + srv.IP + ":" + strconv.Itoa(srv.Port) + ":" + srv.UID + ".")
-			}
+			for pid, pckt := range cfg.Servers[sid].Packets {
+				srvt.PcktID = pid
 
-			if srvt == srvticker.Info {
-				if cfg.DebugLevel > 3 {
-					fmt.Println("[D4] HandleServers :: Found match on " + srvt.IP + ":" + strconv.Itoa(srvt.Port) + ":" + srvt.UID + ".")
+				if srvt == ticker.Srv {
+					if cfg.DebugLevel > 3 {
+						fmt.Println("[D4] HandleServers :: Found match on " + srvt.IP + ":" + strconv.Itoa(srvt.Port) + ":" + srvt.UID + ".")
+					}
+
+					// Fill in stats.
+					stats[srvt] = Stats{
+						LastStats:  ticker.Stats.LastStats,
+						AvgLatency: ticker.Stats.AvgLatency,
+						MaxLatency: ticker.Stats.MaxLatency,
+						MinLatency: ticker.Stats.MinLatency,
+						Detects:    ticker.Stats.Detects,
+					}
+
 				}
-
-				// Fill in stats.
-				stats[srvt] = Stats{
-					Fails:    srvticker.Stats.Fails,
-					Restarts: srvticker.Stats.Restarts,
-					NextScan: srvticker.Stats.NextScan,
-				}
-
 			}
 		}
 
 		// Destroy ticker.
-		*srvticker.Destroyer <- true
+		*ticker.Destroyer <- true
 	}
 
 	// Remove servers that should be deleted.
@@ -163,67 +191,117 @@ func HandleServers(cfg *config.Config, update bool) {
 			continue
 		}
 
+		// Set defaults.
+		if srv.Threshold < 1 {
+			srv.Threshold = cfg.DefThreshold
+		}
+
+		if srv.Count < 1 {
+			srv.Count = cfg.DefCount
+		}
+
+		if srv.Interval < 1 {
+			srv.Interval = cfg.DefInterval
+		}
+
+		if srv.Timeout < 1 {
+			srv.Timeout = cfg.DefTimeout
+		}
+
+		if srv.MaxDetects < 1 {
+			srv.MaxDetects = cfg.DefMaxDetects
+		}
+
+		if srv.Cooldown < 1 {
+			srv.Cooldown = cfg.DefCooldown
+		}
+
 		// Create tuple.
 		var srvt Tuple
 		srvt.IP = srv.IP
 		srvt.Port = srv.Port
 		srvt.UID = srv.UID
 
-		// Specify server-specific variables
-		var fails int = 0
-		var restarts int = 0
-		var nextscan int64 = 0
+		for pid, pckt := range cfg.Servers[i].Packets {
+			// Set defaults.
+			if pckt.Threshold < 1 {
+				pckt.Threshold = srv.Threshold
+			}
 
-		// Replace stats with old ticker's stats.
-		if stat, ok := stats[srvt]; ok {
-			fails = *stat.Fails
-			restarts = *stat.Restarts
-			nextscan = *stat.NextScan
+			if pckt.Count < 1 {
+				pckt.Count = srv.Count
+			}
+
+			if pckt.Interval < 1 {
+				pckt.Interval = srv.Interval
+			}
+
+			if pckt.Timeout < 1 {
+				pckt.Timeout = srv.Timeout
+			}
+
+			if pckt.MaxDetects < 1 {
+				pckt.MaxDetects = srv.MaxDetects
+			}
+
+			if pckt.Cooldown < 1 {
+				pckt.Cooldown = srv.Cooldown
+			}
+
+			// Specify packet-specific variables.
+			var laststats []uint32
+			var avglatency uint32 = 0
+			var maxlatency uint32 = 0
+			var minlatency uint32 = 0
+			var detects uint = 0
+
+			// Replace stats with old ticker's stats.
+			if stat, ok := stats[srvt]; ok {
+				laststats = *stat.LastStats
+				avglatency = *stat.AvgLatency
+				maxlatency = *stat.MaxLatency
+				minlatency = *stat.MinLatency
+				detects = *stat.Detects
+			}
+
+			if cfg.DebugLevel > 0 && !update {
+				fmt.Printf("[D1] Adding packet %s:%d:%s:d (%s). Threshold => %d. Count => %d. Interval => %d. Timeout => %d. Request data => % x.\n", srv.IP, srv.Port, srv.UID, pid, pckt.Threshold, pckt.Count, pckt.Interval, pckt.Timeout, pckt.Request)
+			}
+
+			// Let's create the connection now.
+			conn, err := query.CreateConnection(srv.IP, srv.Port)
+
+			if err != nil {
+				fmt.Println("Error creating UDP connection for " + srv.IP + ":" + strconv.Itoa(srv.Port) + " ( " + srv.Name + ").")
+				fmt.Println(err)
+
+				continue
+			}
+
+			if cfg.DebugLevel > 3 {
+				fmt.Printf("[D4] Creating packet timer for %s:%d:%s:%d (%s).\n", srv.IP, srv.Port, srv.UID, pid, srv.Name)
+			}
+
+			// Create destroyer channel.
+			destroyer := make(chan bool)
+
+			// Create repeating timer.
+			ticker := time.NewTicker(time.Duration(pckt.Interval) * time.Second)
+			go ServerWatch(&cfg.Servers[i], &cfg.Servers[i].Packets[pid], ticker, &laststats, &avglatency, &maxlatency, &minlatency, &detects, conn, cfg, &destroyer)
+
+			// Add ticker to global list.
+			var newticker TickerHolder
+			newticker.Srv = srvt
+			newticker.Ticker = ticker
+			newticker.Conn = conn
+			newticker.Destroyer = &destroyer
+			newticker.Stats.LastStats = &laststats
+			newticker.Stats.AvgLatency = &avglatency
+			newticker.Stats.MaxLatency = &maxlatency
+			newticker.Stats.MinLatency = &minlatency
+			newticker.Stats.Detects = &detects
+
+			tickers = append(tickers, newticker)
 		}
-
-		if cfg.DebugLevel > 0 && !update {
-			fmt.Println("[D1] Adding server " + srv.IP + ":" + strconv.Itoa(srv.Port) + " with UID " + srv.UID + ". Auto Add => " + strconv.FormatBool(srv.ViaAPI) + ". Scan time => " + strconv.Itoa(srv.ScanTime) + ". Max Fails => " + strconv.Itoa(srv.MaxFails) + ". Max Restarts => " + strconv.Itoa(srv.MaxRestarts) + ". Restart Interval => " + strconv.Itoa(srv.RestartInt) + ". Report Only => " + strconv.FormatBool(srv.ReportOnly) + ". Enabled => " + strconv.FormatBool(srv.Enable) + ". Name => " + srv.Name + ". A2S Timeout => " + strconv.Itoa(srv.A2STimeout) + ". Mentions => " + srv.Mentions + ".")
-		}
-
-		// Get scan time.
-		stime := srv.ScanTime
-
-		if stime < 1 {
-			stime = 5
-		}
-
-		// Let's create the connection now.
-		conn, err := query.CreateConnection(srv.IP, srv.Port)
-
-		if err != nil {
-			fmt.Println("Error creating UDP connection for " + srv.IP + ":" + strconv.Itoa(srv.Port) + " ( " + srv.Name + ").")
-			fmt.Println(err)
-
-			continue
-		}
-
-		if cfg.DebugLevel > 3 {
-			fmt.Println("[D4] Creating timer for " + srv.IP + ":" + strconv.Itoa(srv.Port) + ":" + srv.UID + " (" + srv.Name + ").")
-		}
-
-		// Create destroyer channel.
-		destroyer := make(chan bool)
-
-		// Create repeating timer.
-		ticker := time.NewTicker(time.Duration(stime) * time.Second)
-		go ServerWatch(&cfg.Servers[i], ticker, &fails, &restarts, &nextscan, conn, cfg, &destroyer)
-
-		// Add ticker to global list.
-		var newticker TickerHolder
-		newticker.Info = srvt
-		newticker.Ticker = ticker
-		newticker.Conn = conn
-		newticker.ScanTime = stime
-		newticker.Destroyer = &destroyer
-		newticker.Stats.Fails = &fails
-		newticker.Stats.Restarts = &restarts
-		newticker.Stats.NextScan = &nextscan
-
-		tickers = append(tickers, newticker)
 	}
 }

@@ -22,7 +22,7 @@ func AddNewServers(newcfg *config.Config, cfg *config.Config) {
 	// Loop through all new servers.
 	for i, newsrv := range newcfg.Servers {
 		if cfg.DebugLevel > 3 {
-			fmt.Println("[D4] Looking for " + newsrv.IP + ":" + strconv.Itoa(newsrv.Port) + ":" + newsrv.UID + " (" + strconv.Itoa(i) + ") inside of old configuration.")
+			fmt.Printf("[D4] Looking for %s:%d:%s (%s) inside of old configuration.\n", newsrv.IP, newsrv.Port, newsrv.UID, newsrv.Name)
 		}
 
 		toadd := true
@@ -32,17 +32,17 @@ func AddNewServers(newcfg *config.Config, cfg *config.Config) {
 			// Create new server tuple.
 			var nt Tuple
 			nt.IP = newsrv.IP
-			nt.Port = newsrv.Port
+			nt.Port = int(newsrv.Port)
 			nt.UID = newsrv.UID
 
 			// Create old server tuple.
 			var ot Tuple
 			ot.IP = oldsrv.IP
-			ot.Port = oldsrv.Port
+			ot.Port = int(oldsrv.Port)
 			ot.UID = oldsrv.UID
 
 			if cfg.DebugLevel > 4 {
-				fmt.Println("[D5] Comparing " + nt.IP + ":" + strconv.Itoa(nt.Port) + ":" + nt.UID + " == " + ot.IP + ":" + strconv.Itoa(ot.Port) + ":" + ot.UID + " (" + strconv.Itoa(j) + ").")
+				fmt.Printf("[D5] Comparing %s:%d:%s == %s:%d:%s.\n", nt.IP, nt.Port, nt.UID, ot.IP, ot.Port, ot.UID)
 			}
 
 			// Now compare.
@@ -51,17 +51,17 @@ func AddNewServers(newcfg *config.Config, cfg *config.Config) {
 				toadd = false
 
 				if cfg.DebugLevel > 2 {
-					fmt.Println("[D3] Found matching server (" + newsrv.IP + ":" + strconv.Itoa(newsrv.Port) + ":" + newsrv.UID + ") on Add Server check. Applying new configuration. Name => " + newsrv.Name + ". Enabled: " + strconv.FormatBool(oldsrv.Enable) + " => " + strconv.FormatBool(newsrv.Enable) + ". Max fails: " + strconv.Itoa(oldsrv.MaxFails) + " => " + strconv.Itoa(newsrv.MaxFails) + ". Max Restarts: " + strconv.Itoa(oldsrv.MaxRestarts) + " => " + strconv.Itoa(newsrv.MaxRestarts) + ". Restart Int: " + strconv.Itoa(oldsrv.RestartInt) + " => " + strconv.Itoa(newsrv.RestartInt) + ". Scan Time: " + strconv.Itoa(oldsrv.ScanTime) + " => " + strconv.Itoa(newsrv.ScanTime) + ". Report Only: " + strconv.FormatBool(oldsrv.ReportOnly) + " => " + strconv.FormatBool(newsrv.ReportOnly) + ". A2S Timeout: " + strconv.Itoa(oldsrv.A2STimeout) + " => " + strconv.Itoa(newsrv.A2STimeout) + ". Mentions: " + oldsrv.Mentions + " => " + newsrv.Mentions + ".")
+					fmt.Printf("[D3] Found matching server %s:%d:%s (%s) on Add Server check. Applying new configuration. Enabled: %t => %t. Threshold: %d => %d. Count: %d => %d. Interval: %d => %d. Timeout: %d => %d. Max Detections: %d => %d. Cooldown: %d => %d.\n", newsrv.IP, newsrv.Port, newsrv.UID, newsrv.Name, oldsrv.Enable, newsrv.Enable, oldsrv.Threshold, newsrv.Threshold, oldsrv.Count, newsrv.Count, oldsrv.Interval, newsrv.Interval, oldsrv.Timeout, newsrv.Timeout, oldsrv.MaxDetects, newsrv.MaxDetects, oldsrv.Cooldown, newsrv.Cooldown)
 				}
 
 				// Update specific configuration.
 				cfg.Servers[j].Enable = newsrv.Enable
-				cfg.Servers[j].MaxFails = newsrv.MaxFails
-				cfg.Servers[j].MaxRestarts = newsrv.MaxRestarts
-				cfg.Servers[j].RestartInt = newsrv.RestartInt
-				cfg.Servers[j].ScanTime = newsrv.ScanTime
-				cfg.Servers[j].ReportOnly = newsrv.ReportOnly
-				cfg.Servers[j].A2STimeout = newsrv.A2STimeout
+				cfg.Servers[j].Threshold = newsrv.Threshold
+				cfg.Servers[j].Count = newsrv.Count
+				cfg.Servers[j].Interval = newsrv.Interval
+				cfg.Servers[j].Timeout = newsrv.Timeout
+				cfg.Servers[j].MaxDetects = newsrv.MaxDetects
+				cfg.Servers[j].Cooldown = newsrv.Cooldown
 				cfg.Servers[j].Mentions = newsrv.Mentions
 			}
 		}
@@ -69,7 +69,7 @@ func AddNewServers(newcfg *config.Config, cfg *config.Config) {
 		// If we're not inside of the current configuration, add the server.
 		if toadd {
 			if cfg.DebugLevel > 1 {
-				fmt.Println("[D2] Adding server from update " + newsrv.IP + ":" + strconv.Itoa(newsrv.Port) + " with UID " + newsrv.UID + ". Name => " + newsrv.Name + ". Auto Add => " + strconv.FormatBool(newsrv.ViaAPI) + ". Scan time => " + strconv.Itoa(newsrv.ScanTime) + ". Max Fails => " + strconv.Itoa(newsrv.MaxFails) + ". Max Restarts => " + strconv.Itoa(newsrv.MaxRestarts) + ". Restart Interval => " + strconv.Itoa(newsrv.RestartInt) + ". Enabled => " + strconv.FormatBool(newsrv.Enable) + ". A2S Timeout => " + strconv.Itoa(newsrv.A2STimeout) + ". Mentions => " + newsrv.Mentions + ".")
+				fmt.Printf("[D3] Adding server %s:%d:%s (%s). Enabled => %t. Threshold => %d. Count => %d. Interval => %d. Timeout => %d. Max Detections => %d. Cooldown  => %d.\n", newsrv.IP, newsrv.Port, newsrv.UID, newsrv.Name, newsrv.Enable, newsrv.Threshold, newsrv.Count, newsrv.Interval, newsrv.Timeout, newsrv.MaxDetects, newsrv.Cooldown)
 			}
 
 			cfg.Servers = append(cfg.Servers, newsrv)
@@ -81,7 +81,7 @@ func DelOldServers(newcfg *config.Config, cfg *config.Config) {
 	// Loop through all old servers.
 	for i, oldsrv := range cfg.Servers {
 		if cfg.DebugLevel > 3 {
-			fmt.Println("[D4] Looking for " + oldsrv.IP + ":" + strconv.Itoa(oldsrv.Port) + ":" + oldsrv.UID + " (" + strconv.Itoa(i) + ") inside of new configuration.")
+			fmt.Printf("[D4] Looking for %s:%d:%s (%s) inside of new configuration.\n", oldsrv.IP, oldsrv.Port, oldsrv.UID, oldsrv.Name)
 		}
 
 		todel := true
@@ -91,17 +91,17 @@ func DelOldServers(newcfg *config.Config, cfg *config.Config) {
 			// Create old server tuple.
 			var ot Tuple
 			ot.IP = oldsrv.IP
-			ot.Port = oldsrv.Port
+			ot.Port = int(oldsrv.Port)
 			ot.UID = oldsrv.UID
 
 			// Create new server tuple.
 			var nt Tuple
 			nt.IP = newsrv.IP
-			nt.Port = newsrv.Port
+			nt.Port = int(newsrv.Port)
 			nt.UID = newsrv.UID
 
 			if cfg.DebugLevel > 4 {
-				fmt.Println("[D5] Comparing " + ot.IP + ":" + strconv.Itoa(ot.Port) + ":" + ot.UID + " == " + nt.IP + ":" + strconv.Itoa(nt.Port) + ":" + nt.UID + " (" + strconv.Itoa(j) + ").")
+				fmt.Printf("[D5] Comparing %s:%d:%s == %s:%d:%s\n", ot.IP, ot.Port, ot.UID, nt.IP, nt.Port, nt.UID)
 			}
 
 			// Now compare.
@@ -113,7 +113,7 @@ func DelOldServers(newcfg *config.Config, cfg *config.Config) {
 		// If we're not inside of the new configuration, delete the server.
 		if todel {
 			if cfg.DebugLevel > 1 {
-				fmt.Println("[D2] Deleting server from update " + oldsrv.IP + ":" + strconv.Itoa(oldsrv.Port) + " with UID " + oldsrv.UID + ". Name => " + oldsrv.Name + ".")
+				fmt.Println("[D2] Deleting server from update %s:%d:%s (%s).\n", oldsrv.IP, oldsrv.Port, oldsrv.UID, oldsrv.Name)
 			}
 
 			// Set Delete to true so we'll delete the server, close the connection, etc. on the next scan.
@@ -157,11 +157,12 @@ func ReloadServers(timer *time.Ticker, cfg *config.Config) {
 			cfg.AddServers = newcfg.AddServers
 
 			cfg.DefEnable = newcfg.DefEnable
-			cfg.DefScanTime = newcfg.DefScanTime
-			cfg.DefMaxFails = newcfg.DefMaxFails
-			cfg.DefMaxRestarts = newcfg.DefMaxRestarts
-			cfg.DefRestartInt = newcfg.DefRestartInt
-			cfg.DefReportOnly = newcfg.DefReportOnly
+			cfg.DefThreshold = newcfg.DefThreshold
+			cfg.DefCount = newcfg.DefCount
+			cfg.DefInterval = newcfg.DefInterval
+			cfg.DefTimeout = newcfg.DefTimeout
+			cfg.DefMaxDetects = newcfg.DefMaxDetects
+			cfg.DefCooldown = newcfg.DefCooldown
 
 			// If reload time is different, recreate reload timer.
 			if cfg.ReloadTime != newcfg.ReloadTime {
@@ -170,7 +171,7 @@ func ReloadServers(timer *time.Ticker, cfg *config.Config) {
 				}
 
 				if cfg.DebugLevel > 2 {
-					fmt.Println("[D3] Recreating update timer due to updated reload time (" + strconv.Itoa(cfg.ReloadTime) + " => " + strconv.Itoa(newcfg.ReloadTime) + ").")
+					fmt.Println("[D3] Recreating update timer due to updated reload time (" + strconv.Itoa(int(cfg.ReloadTime)) + " => " + strconv.Itoa(int(newcfg.ReloadTime)) + ").")
 				}
 
 				// Create repeating timer.
@@ -182,7 +183,7 @@ func ReloadServers(timer *time.Ticker, cfg *config.Config) {
 
 			// Level 2 debug message.
 			if cfg.DebugLevel > 1 {
-				fmt.Println("[D2] Updating server list.")
+				fmt.Println("[D2] Updating servers.")
 			}
 
 			// Add new servers.
@@ -208,7 +209,7 @@ func Init(cfg *config.Config) {
 	}
 
 	if cfg.DebugLevel > 0 {
-		fmt.Println("[D1] Setting up reload timer for every " + strconv.Itoa(cfg.ReloadTime) + " seconds.")
+		fmt.Println("[D1] Setting up reload timer for every " + strconv.Itoa(int(cfg.ReloadTime)) + " seconds.")
 	}
 
 	// Create repeating timer.

@@ -9,7 +9,7 @@ import (
 	"github.com/GFLClan/Pterodactyl-PacketWatch/config"
 )
 
-func HandleMisc(cfg *config.Config, srv *config.Server, fails int, restarts int) {
+func HandleMisc(cfg *config.Config, srv *config.Server, pckt *config.Packet, avglatency uint32, maxlatency uint32, minlatency uint32, detects uint) {
 	// Look for Misc options.
 	if len(cfg.Misc) > 0 {
 		for i, v := range cfg.Misc {
@@ -21,8 +21,8 @@ func HandleMisc(cfg *config.Config, srv *config.Server, fails int, restarts int)
 			// Handle web hooks.
 			if v.Type == "webhook" {
 				// Set defaults.
-				contentpre := "**SERVER DOWN**\n- **Name** => {NAME}\n- **IP** => {IP}:{PORT}\n- **Fail Count** => {FAILS}/{MAXFAILS}\n- **Restart Count** => {RESTARTS}/{MAXRESTARTS}\n\nScanning again in *{RESTARTINT}* seconds..."
-				username := "Pterowatch"
+				contentpre := "**High Latency**\n- **Server Name** => {NAME}\n- **Packet Name** => {PCKTNAME}\n- **Avg Latency** => {AVG}ms\n- **Max Latency** => {MAX}\n- **Min Latency** => {MIN}\n- **Detects** => {DETECTS}/{MAXDETECTS}.\n- **Mentions** => {MENTIONS}\n\nScanning again in *{COOLDOWN}* seconds."
+				username := "Pteropacket"
 				avatarurl := ""
 				allowedmentions := AllowMentions{
 					Roles: false,
@@ -166,7 +166,7 @@ func HandleMisc(cfg *config.Config, srv *config.Server, fails int, restarts int)
 
 				// Replace variables in strings.
 				contents := contentpre
-				FormatContents(app, &contents, fails, restarts, srv, mentionstr)
+				FormatContents(app, &contents, avglatency, maxlatency, minlatency, detects, srv, pckt, mentionstr)
 
 				// Level 3 debug.
 				if cfg.DebugLevel > 2 {

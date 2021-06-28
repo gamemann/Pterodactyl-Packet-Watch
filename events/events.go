@@ -5,7 +5,7 @@ import (
 	"github.com/GFLClan/Pterodactyl-PacketWatch/misc"
 )
 
-func OnServerDown(cfg *config.Config, srv *config.Server, fails int, restarts int) {
+func OnDetect(cfg *config.Config, srv *config.Server, pckt *config.Packet, avglatency uint32, maxlatency uint32, minlatency uint32, detects uint) {
 	// Handle Misc options.
-	misc.HandleMisc(cfg, srv, fails, restarts)
+	misc.HandleMisc(cfg, srv, pckt, avglatency, maxlatency, minlatency, detects)
 }
