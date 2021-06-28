@@ -67,7 +67,8 @@ func ServerWatch(srv *config.Server, pckt *config.Packet, timer *time.Ticker, la
 					fmt.Printf("[D2] Request timed out for %s:%d:%s (%s). Timeout => %d.\n", srv.IP, srv.Port, srv.UID, srv.Name, pckt.Timeout)
 				}
 
-				continue
+				// Set latency to timeout (to milliseconds).
+				latency = uint32(pckt.Timeout * 1000)
 			} else {
 				latency = uint32(stop.Milliseconds())
 			}
@@ -233,6 +234,10 @@ func HandleServers(cfg *config.Config, update bool) {
 
 		if srv.Cooldown < 1 {
 			cfg.Servers[i].Cooldown = cfg.DefCooldown
+		}
+
+		if len(srv.Mentions) < 1 {
+			cfg.Servers[i].Mentions = cfg.DefMentions
 		}
 
 		// Create tuple.
