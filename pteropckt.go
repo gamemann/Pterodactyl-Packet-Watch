@@ -7,10 +7,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/GFLClan/Pterodactyl-PacketWatch/config"
-	"github.com/GFLClan/Pterodactyl-PacketWatch/pterodactyl"
-	"github.com/GFLClan/Pterodactyl-PacketWatch/servers"
-	"github.com/GFLClan/Pterodactyl-PacketWatch/update"
+	"github.com/gamemann/Pterodactyl-Packet-Watch/config"
+	"github.com/gamemann/Pterodactyl-Packet-Watch/pterodactyl"
+	"github.com/gamemann/Pterodactyl-Packet-Watch/servers"
+	"github.com/gamemann/Pterodactyl-Packet-Watch/update"
 )
 
 func main() {

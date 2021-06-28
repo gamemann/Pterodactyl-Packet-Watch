@@ -1,8 +1,8 @@
 package events
 
 import (
-	"github.com/GFLClan/Pterodactyl-PacketWatch/config"
-	"github.com/GFLClan/Pterodactyl-PacketWatch/misc"
+	"github.com/gamemann/Pterodactyl-Packet-Watch/config"
+	"github.com/gamemann/Pterodactyl-Packet-Watch/misc"
 )
 
 func OnDetect(cfg *config.Config, srv *config.Server, pckt *config.Packet, avglatency uint32, maxlatency uint32, minlatency uint32, detects uint) {

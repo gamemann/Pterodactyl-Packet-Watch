@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/GFLClan/Pterodactyl-PacketWatch/config"
+	"github.com/gamemann/Pterodactyl-Packet-Watch/config"
 )
 
 // Attributes struct from /api/client/servers/xxxx/resources.

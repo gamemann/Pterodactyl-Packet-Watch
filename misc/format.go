@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/GFLClan/Pterodactyl-PacketWatch/config"
+	"github.com/gamemann/Pterodactyl-Packet-Watch/config"
 )
 
 func FormatContents(app string, formatstr *string, avglatency uint32, maxlatency uint32, minlatency uint32, detects uint, srv *config.Server, pckt *config.Packet, mentionstr string) {

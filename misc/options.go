@@ -6,7 +6,7 @@ import (
 	"math/big"
 	"strconv"
 
-	"github.com/GFLClan/Pterodactyl-PacketWatch/config"
+	"github.com/gamemann/Pterodactyl-Packet-Watch/config"
 )
 
 func HandleMisc(cfg *config.Config, srv *config.Server, pckt *config.Packet, avglatency uint32, maxlatency uint32, minlatency uint32, detects uint) {

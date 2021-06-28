@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/GFLClan/Pterodactyl-PacketWatch/config"
-	"github.com/GFLClan/Pterodactyl-PacketWatch/pterodactyl"
-	"github.com/GFLClan/Pterodactyl-PacketWatch/servers"
+	"github.com/gamemann/Pterodactyl-Packet-Watch/config"
+	"github.com/gamemann/Pterodactyl-Packet-Watch/pterodactyl"
+	"github.com/gamemann/Pterodactyl-Packet-Watch/servers"
 )
 
 type Tuple struct {

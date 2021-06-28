@@ -7,10 +7,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/GFLClan/Pterodactyl-PacketWatch/config"
-	"github.com/GFLClan/Pterodactyl-PacketWatch/events"
-	"github.com/GFLClan/Pterodactyl-PacketWatch/pterodactyl"
-	"github.com/GFLClan/Pterodactyl-PacketWatch/query"
+	"github.com/gamemann/Pterodactyl-Packet-Watch/config"
+	"github.com/gamemann/Pterodactyl-Packet-Watch/events"
+	"github.com/gamemann/Pterodactyl-Packet-Watch/pterodactyl"
+	"github.com/gamemann/Pterodactyl-Packet-Watch/query"
 )
 
 var tickers []TickerHolder
