@@ -1,0 +1,34 @@
+{
+        "apiURL": "https://panel.mydomain.com",
+        "token": "12345",
+        "addservers": false,
+
+        "servers": [
+                {
+                        "enable": true,
+                        "ip": "172.20.0.10",
+                        "port": 27015,
+                        "uid": "testingUID",
+                        "packets": [
+                                {
+                                        "name": "A2S Info",
+                                        "data": "FF FF FF FF 54 53 6F 75 72 63 65 20 45 6E 67 69 6E 65 20 51 75 65 72 79 00",
+                                        "threshold": 5
+                                }
+                        ]
+                },
+                {
+                        "enable": true,
+                        "ip": "172.20.0.11",
+                        "port": 27015,
+                        "uid": "testingUID2",
+                        "packets": [
+                                {
+                                        "name": "A2S Info",
+                                        "data": "FF FF FF FF 54 53 6F 75 72 63 65 20 45 6E 67 69 6E 65 20 51 75 65 72 79 00",
+                                        "threshold": 5
+                                }
+                        ]
+                }
+        ]
+}
