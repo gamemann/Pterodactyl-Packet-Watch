@@ -201,7 +201,7 @@ func AddServers(cfg *config.Config) bool {
 						}
 
 						// Check for packets override.
-						if vari["env_variable"].(string) == "PTEROPACKET_INTERVAL" {
+						if vari["env_variable"].(string) == "PTEROPACKET_PACKETS" {
 							err := json.Unmarshal([]byte(val), &cfg.Servers[z].Packets)
 
 							if err != nil {
