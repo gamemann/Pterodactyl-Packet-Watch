@@ -1,21 +1,21 @@
-# Pterodactyl Game Server Watch
+# Pterodactyl Packet Watch
 
 ## Description
-A tool programmed in Go to automatically restart 'hung' (game) servers via the Pterodactyl API (working since version 1.4.2). This only supports servers that respond to the [A2S_INFO](https://developer.valvesoftware.com/wiki/Server_queries#A2S_INFO) query (a Valve Master Server query). I am currently looking for a better way to detect if a server is hung, though.
+A [fork](https://github.com/gamemann/Pterodactyl-Game-Server-Watch) of Pterodactyl Game Server Watch. This version basically sends specified packet types and if the average response time (in milliseconds) goes beyond a specified threshold, misc options (web hooks) will be performed.
 
 ## Command Line Flags
-There is only one command line argument/flag and it is `-cfg=<path>`. This argument/flag changes the path to the Pterowatch config file. The default value is `/etc/pterowatch/pterowatch.conf`.
+There is only one command line argument/flag and it is `-cfg=<path>`. This argument/flag changes the path to the Pteropckt config file. The default value is `/etc/pteropckt/pteropckt.conf`.
 
 Examples include:
 
 ```
-./pterowatch -cfg=/home/cdeacon/myconf.conf
-./pterowatch -cfg=~/myconf.conf
-./pterowatch -cfg=myconf.conf
+./pteropckt -cfg=/home/cdeacon/myconf.conf
+./pteropckt -cfg=~/myconf.conf
+./pteropckt -cfg=myconf.conf
 ```
 
 ## Config File
-The config file's default path is `/etc/pterowatch/pterowatch.conf` (this can be changed with a command line argument/flag as seen above). This should be a JSON array including the API URL, token, and an array of servers to check against. The main options are the following:
+The config file's default path is `/etc/pteropckt/pteropckt.conf` (this can be changed with a command line argument/flag as seen above). This should be a JSON array including the API URL, token, and an array of servers to check against. The main options are the following:
 
 * `apiurl` => The Pterodactyl API URL (do not include the `/` at the end).
 * `token` => The bearer token (from the client) to use when sending requests to the Pterodactyl API.
@@ -24,11 +24,12 @@ The config file's default path is `/etc/pterowatch/pterowatch.conf` (this can be
 * `reloadtime` => If above 0, will reload the configuration file and retrieve servers from the API every *x* seconds.
 * `addservers` => Whether or not to automatically add servers to the config from the Pterodactyl API.
 * `defenable` => The default enable boolean of a server added via the Pterodactyl API.
-* `defscantime` => The default scan time of a server added via the Pterodactyl API.
-* `defmaxfails` => The default max fails of a server added via the Pterodactyl API.
-* `defmaxrestarts` => The default max restarts of a server added via the Pterodactyl API.
-* `defrestartint` => The default restart interval of a server added via the Pterodactyl API.
-* `defreportonly` => The default report only boolean of a server added via the Pterodactyl API.
+* `defthreshold` => The default threshold of a server added via the Pterodactyl API.
+* `defcount` => The default count (max latencies stored) of a server added via the Pterodactyl API.
+* `definterval` => The default interal between scanning servers of a server added via the Pterodactyl API.
+* `deftimeout` => The default packet timeout of a server added via the Pterodactyl API.
+* `defmaxdetects` => The default max detects of a server added via the Pterodactyl API.
+* `defcooldown` => The default cooldown between detects of a server added via the Pterodactyl API.
 * `defmentions` => The default mentions JSON for servers added via the Pterodactyl API.
 * `servers` => An array of servers to watch (read below).
 * `misc` => An array of misc options (read below).
@@ -36,15 +37,16 @@ The config file's default path is `/etc/pterowatch/pterowatch.conf` (this can be
 ## Egg Variable Overrides
 If you have the `addservers` setting set to true (servers are automatically retrieved via the Pterodactyl API), you may use the following egg variables as overrides to the specific server's config.
 
-* `PTEROWATCH_DISABLE` => If set to above 0, will disable the specific server from the tool.
-* `PTEROWATCH_IP` => If not empty, will override the server IP to scan with this value for the specific server.
-* `PTEROWATCH_PORT` => If not empty, will override the server port to scan with this value for the specific server.
-* `PTEROWATCH_SCANTIME` => If not empty, will override the scan time with this value for the specific server.
-* `PTEROWATCH_MAXFAILS` => If not empty, will override the maximum fails with this value for the specific server.
-* `PTEROWATCH_MAXRESTARTS` => If not empty, will override the maximum restarts with this value for the specific server.
-* `PTEROWATCH_RESTARTINT` => If not empty, will override the restart interval with this value for the specific server.
-* `PTEROWATCH_REPORTONLY` => If not empty, will override report only with this value for the specific server.
-* `PTEROWATCH_MENTIONS` => If not empty, will override the mentions JSON string with this value for the specific server.
+* `PTEROPCKT_DISABLE` => If set to above 0, will disable the specific server from the tool.
+* `PTEROPCKT_IP` => If not empty, will override the server IP to scan with this value for the specific server.
+* `PTEROPCKT_PORT` => If not empty, will override the server port to scan with this value for the specific server.
+* `PTEROPCKT_THRESHOLD` => If not empty, will override the threshold with this value for the specific server.
+* `PTEROPCKT_COUNT` => If not empty, will override the count with this value for the specific server.
+* `PTEROPCKT_INTERVAL` => If not empty, will override the interval with this value for the specific server.
+* `PTEROPCKT_TIMEOUT` => If not empty, will override the timeout with this value for the specific server.
+* `PTEROPCKT_MAXDETECTS` => If not empty, will override max detects with this value for the specific server.
+* `PTEROPCKT_COOLDOWN` => If not empty, will override cooldown with this value for the specific server.
+* `PTEROPCKT_MENTIONS` => If not empty, will override the mentions JSON string with this value for the specific server.
 
 ## Server Options/Array
 This array is used to manually add servers to watch. The `servers` array should contain the following items:
@@ -54,12 +56,37 @@ This array is used to manually add servers to watch. The `servers` array should 
 * `ip` => The IP to send A2S_INFO requests to.
 * `port` => The port to send A2S_INFO requests to.
 * `uid` => The server's Pterodactyl UID.
-* `scantime` => How often to scan a game server in seconds.
-* `maxfails` => The maximum amount of A2S_INFO response failures before attempting to restart the game server.
-* `maxrestarts` => The maximum amount of times we attempt to restart the server until A2S_INFO responses start coming back successfully.
-* `restartint` => When a game server is restarted, the program won't start scanning the server until *x* seconds later.
-* `reportonly` => If set, only debugging and misc options will be executed when a server is detected as down (e.g. no restart).
+* `threshold` => The default threshold of the server.
+* `count` => The default count (max latencies stored) of the server.
+* `interval` => The default interal between scanning servers of the server.
+* `timeout` => The default packet timeout of the server.
+* `maxdetects` => The default max detects of the server.
+* `cooldown` => The default cooldown between detects of the server.
+* `packets` => The packets array.
 * `mentions` => A JSON string that parses all custom role and user mentions inside of web hooks for this server.
+
+## Packets Array
+The server's `packets` array defines which packets the servers should send and the main point of the program.
+
+* `name` => The server's name.
+* `data` => The request payload in hexadecimal format with no spaces.
+* `threshold` => The threshold of the server.
+* `count` => The count (max latencies stored) of the server.
+* `interval` => The interal between scanning servers of the server.
+* `timeout` => The packet timeout of the server.
+* `maxdetects` => The max detects of the server.
+* `cooldown` => The cooldown between detects of the server.
+
+The following is an example.
+
+```JSON
+"packets": [
+        {
+                "name": "name",
+                "data": "FFFFFFFF54536F7572636520456E67696E6520517565727900"
+        }
+]
+```
 
 ## Server Mentions Array
 The server `mentions` JSON string's parsed JSON output includes a `data` list with each item including a `role` (boolean indicating whether we're mentioning a role) and `id` (the ID of the role or user in string format).
@@ -130,68 +157,38 @@ Please look at the following data items:
 The following strings are replaced inside of the `contents` string before the web hook submission.
 
 * `{IP}` => The server's IP.
-* `{Port}` => The server's port.
-* `{FAILS}` => The server's current fail count.
-* `{RESTARTS}` => The amount of times the server has been restarted since down.
-* `{MAXFAILS}` => The server's configured max fails.
-* `{MAXRESTARTS}` => The server's configured max restarts.
-* `{UID}` => The server's UID from the config file/Pterodactyl API.
-* `{SCANTIME}` => The server's configured scan time.
-* `{RESTARTINT}` => The server's configured restart interval.
+* `{PORT}` => The server's port.
 * `{NAME}` => The server's name.
+* `{UID}` => The server's UID from the config file/Pterodactyl API.
+* `{AVG}` => The server's average latency.
+* `{MAX}` => The server's max latency.
+* `{MIN}` => The server's min latency.
+* `{THRESHOLD}` => The packet's configured threshold.
+* `{COUNT}` => The packet's configured count.
+* `{INTERVAL}` => The packet's configured interval.
+* `{TIMEOUT}` => The packet's configured timeout.
+* `{MAXDETECTS}` => The packet's configured max detects.
+* `{COOLDOWN}` => The packet's configured cooldown.
 * `{MENTIONS}` => If there are mentions, it will print them in `<id>, ...` format in this replacement.
 
 #### Defaults
 Here are the Discord web hook's default values.
 
-* `contents` => \*\*SERVER DOWN\*\*\\n- \*\*Name\*\* => {NAME}\\n- \*\*IP\*\* => {IP}:{PORT}\\n- \*\*Fail Count\*\* => {FAILS}/{MAXFAILS}\\n- \*\*Restart Count\*\* => {RESTARTS}/{MAXRESTARTS}\\n\\nScanning again in \*{RESTARTINT}\* seconds...
-* `username` => Pterowatch
+* `contents` => ...
+* `username` => Pteropckt
 * `avatarurl` => *empty* (default)
 
 ## Configuration Example
-Here's an configuration example in JSON:
-
-```JSON
-{
-        "apiurl": "https://panel.mydomain.com",
-        "token": "12345",
-        "addservers": true,
-
-        "servers": [
-                {
-                        "enable": true,
-                        "ip": "172.20.0.10",
-                        "port": 27015,
-                        "uid": "testingUID",
-                        "scantime": 5,
-                        "maxfails": 5,
-                        "maxrestarts": 1,
-                        "restartint": 120
-                },
-                {
-                        "enable": true,
-                        "ip": "172.20.0.11",
-                        "port": 27015,
-                        "uid": "testingUID2",
-                        "scantime": 5,
-                        "maxfails": 10,
-                        "maxrestarts": 2,
-                        "restartint": 120
-                }
-        ]
-}
-```
-
-You may find other config examples in the [tests/](https://github.com/gamemann/Pterodactyl-Game-Server-Watch/tree/master/tests) directory.
+You may find config examples in the [tests/](https://github.com/GFLClan/Pterodactyl-PacketWatch/tree/master/tests) directory.
 
 ## Building
 You may use `git` and `go build` to build this project and produce a binary. I'd suggest cloning this to `$GOPATH` so there aren't problems with linking modules. For example:
 
 ```
 cd <Path To One $GOPATH>
-git clone https://github.com/gamemann/Pterodactyl-Game-Server-Watch.git
-cd Pterodactyl-Game-Server-Watch
-go build -o pterowatch
+git clone https://github.com/GFLClan/Pterodactyl-PacketWatch.git
+cd Pterodactyl-PacketWatch
+go build -o pteropckt
 ```
 
 ## Credits
