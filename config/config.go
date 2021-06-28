@@ -9,7 +9,7 @@ import (
 // Packet types.
 type Packet struct {
 	Name       string `json:"name"`
-	Request    []byte `json:"data"`
+	Request    string `json:"data"`
 	Interval   uint   `json:"interval"`
 	Threshold  uint32 `json:"threshold"`
 	Count      uint   `json:"count"`

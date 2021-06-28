@@ -1,16 +1,16 @@
 package servers
 
 import (
+	"encoding/hex"
 	"fmt"
 	"net"
 	"strconv"
 	"time"
 
+	"github.com/GFLClan/Pterodactyl-PacketWatch/config"
 	"github.com/GFLClan/Pterodactyl-PacketWatch/events"
-	"github.com/gamemann/Pterodactyl-Game-Server-Watch/config"
-	"github.com/gamemann/Pterodactyl-Game-Server-Watch/events"
-	"github.com/gamemann/Pterodactyl-Game-Server-Watch/pterodactyl"
-	"github.com/gamemann/Pterodactyl-Game-Server-Watch/query"
+	"github.com/GFLClan/Pterodactyl-PacketWatch/pterodactyl"
+	"github.com/GFLClan/Pterodactyl-PacketWatch/query"
 )
 
 var tickers []TickerHolder
@@ -18,6 +18,15 @@ var tickers []TickerHolder
 // Timer function.
 func ServerWatch(srv *config.Server, pckt *config.Packet, timer *time.Ticker, laststats *[]uint32, avglatency *uint32, maxlatency *uint32, minlatency *uint32, detects *uint, conn *net.UDPConn, cfg *config.Config, destroy *chan bool) {
 	var nextscan int64
+
+	data, err := hex.DecodeString(pckt.Request)
+
+	if err != nil {
+		fmt.Println("Failed to parse data => " + pckt.Request)
+		fmt.Println(err)
+
+		return
+	}
 
 	for {
 		select {
@@ -40,7 +49,7 @@ func ServerWatch(srv *config.Server, pckt *config.Packet, timer *time.Ticker, la
 			}
 
 			// Send request.
-			query.SendRequest(conn, pckt.Request)
+			query.SendRequest(conn, data)
 
 			if cfg.DebugLevel > 2 {
 				fmt.Printf("[D2] Packet %s:%d:%s (%s) sent. Request data => % x\n", srv.IP, srv.Port, srv.UID, srv.Name, pckt.Request)
@@ -51,9 +60,11 @@ func ServerWatch(srv *config.Server, pckt *config.Packet, timer *time.Ticker, la
 			var start uint32
 			var stop uint32
 
-			start = uint32(time.Since().Milliseconds())
-			resp := query.CheckResponse(conn, *srv)
-			stop = uint32(time.Since().Milliseconds())
+			var ts time.Time
+
+			start = uint32(time.Since(ts).Milliseconds())
+			resp := query.CheckResponse(conn, pckt.Timeout)
+			stop = uint32(time.Since(ts).Milliseconds())
 
 			if !resp {
 				if cfg.DebugLevel > 1 {
@@ -68,8 +79,12 @@ func ServerWatch(srv *config.Server, pckt *config.Packet, timer *time.Ticker, la
 			// Add into stats.
 			*laststats = append(*laststats, latency)
 
+			if uint(len(*laststats)) < pckt.Count/2 {
+				continue
+			}
+
 			// Check if we need to remove the oldest.
-			if len(*laststats) > pckt.Count {
+			if uint(len(*laststats)) > pckt.Count {
 				RemoveStat(laststats, 0)
 			}
 
@@ -143,10 +158,10 @@ func HandleServers(cfg *config.Config, update bool) {
 			// Create tuple.
 			var srvt Tuple
 			srvt.IP = srv.IP
-			srvt.Port = srv.Port
+			srvt.Port = int(srv.Port)
 			srvt.UID = srv.UID
 
-			for pid, pckt := range cfg.Servers[sid].Packets {
+			for pid, _ := range cfg.Servers[sid].Packets {
 				srvt.PcktID = pid
 
 				if srvt == ticker.Srv {
@@ -175,7 +190,7 @@ func HandleServers(cfg *config.Config, update bool) {
 	for i, srv := range cfg.Servers {
 		if srv.Delete {
 			if cfg.DebugLevel > 1 {
-				fmt.Println("[D2] Found server that should be deleted UID => " + srv.UID + ". Name => " + srv.Name + ". IP => " + srv.IP + ". Port => " + strconv.Itoa(srv.Port) + ".")
+				fmt.Println("[D2] Found server that should be deleted UID => " + srv.UID + ". Name => " + srv.Name + ". IP => " + srv.IP + ". Port => " + strconv.Itoa(int(srv.Port)) + ".")
 			}
 
 			RemoveServer(cfg, i)
@@ -219,7 +234,7 @@ func HandleServers(cfg *config.Config, update bool) {
 		// Create tuple.
 		var srvt Tuple
 		srvt.IP = srv.IP
-		srvt.Port = srv.Port
+		srvt.Port = int(srv.Port)
 		srvt.UID = srv.UID
 
 		for pid, pckt := range cfg.Servers[i].Packets {
@@ -269,10 +284,10 @@ func HandleServers(cfg *config.Config, update bool) {
 			}
 
 			// Let's create the connection now.
-			conn, err := query.CreateConnection(srv.IP, srv.Port)
+			conn, err := query.CreateConnection(srv.IP, int(srv.Port))
 
 			if err != nil {
-				fmt.Println("Error creating UDP connection for " + srv.IP + ":" + strconv.Itoa(srv.Port) + " ( " + srv.Name + ").")
+				fmt.Println("Error creating UDP connection for " + srv.IP + ":" + strconv.Itoa(int(srv.Port)) + " ( " + srv.Name + ").")
 				fmt.Println(err)
 
 				continue

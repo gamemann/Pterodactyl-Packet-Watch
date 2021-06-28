@@ -20,7 +20,7 @@ var updateticker *time.Ticker
 
 func AddNewServers(newcfg *config.Config, cfg *config.Config) {
 	// Loop through all new servers.
-	for i, newsrv := range newcfg.Servers {
+	for _, newsrv := range newcfg.Servers {
 		if cfg.DebugLevel > 3 {
 			fmt.Printf("[D4] Looking for %s:%d:%s (%s) inside of old configuration.\n", newsrv.IP, newsrv.Port, newsrv.UID, newsrv.Name)
 		}
@@ -87,7 +87,7 @@ func DelOldServers(newcfg *config.Config, cfg *config.Config) {
 		todel := true
 
 		// Now loop through new servers.
-		for j, newsrv := range newcfg.Servers {
+		for _, newsrv := range newcfg.Servers {
 			// Create old server tuple.
 			var ot Tuple
 			ot.IP = oldsrv.IP

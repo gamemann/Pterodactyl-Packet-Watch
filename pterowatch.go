@@ -5,18 +5,17 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 
-	"github.com/gamemann/Pterodactyl-Game-Server-Watch/config"
-	"github.com/gamemann/Pterodactyl-Game-Server-Watch/pterodactyl"
-	"github.com/gamemann/Pterodactyl-Game-Server-Watch/servers"
-	"github.com/gamemann/Pterodactyl-Game-Server-Watch/update"
+	"github.com/GFLClan/Pterodactyl-PacketWatch/config"
+	"github.com/GFLClan/Pterodactyl-PacketWatch/pterodactyl"
+	"github.com/GFLClan/Pterodactyl-PacketWatch/servers"
+	"github.com/GFLClan/Pterodactyl-PacketWatch/update"
 )
 
 func main() {
-	// Look for 'cfg' flag in command line arguments (default path: /etc/pterowatch/pterowatch.conf).
-	configFile := flag.String("cfg", "/etc/pterowatch/pterowatch.conf", "The path to the Pterowatch config file.")
+	// Look for 'cfg' flag in command line arguments (default path: /etc/pteropacket/pteropacket.conf).
+	configFile := flag.String("cfg", "/etc/pteropacket/pteropacket.conf", "The path to the Pterowatch config file.")
 	flag.Parse()
 
 	// Create config struct.
@@ -30,12 +29,12 @@ func main() {
 
 	// Level 1 debug.
 	if cfg.DebugLevel > 0 {
-		fmt.Println("[D1] Found config with API URL => " + cfg.APIURL + ". Token => " + cfg.Token + ". Auto Add Servers => " + strconv.FormatBool(cfg.AddServers) + ". Debug level => " + strconv.Itoa(cfg.DebugLevel) + ". Reload time => " + strconv.Itoa(cfg.ReloadTime))
+		fmt.Printf("[D1] Found config with API URL => %s. Token => %s. App Token => %s. Auto Add Servers => %t. Debug level => %d. Reload time => %d.\n", cfg.APIURL, cfg.Token, cfg.AppToken, cfg.AddServers, cfg.DebugLevel, cfg.ReloadTime)
 	}
 
 	// Level 2 debug.
 	if cfg.DebugLevel > 1 {
-		fmt.Println("[D2] Config default server values. Enable => " + strconv.FormatBool(cfg.DefEnable) + ". Scan time => " + strconv.Itoa(cfg.DefScanTime) + ". Max Fails => " + strconv.Itoa(cfg.DefMaxFails) + ". Max Restarts => " + strconv.Itoa(cfg.DefMaxRestarts) + ". Restart Interval => " + strconv.Itoa(cfg.DefRestartInt) + ". Report Only => " + strconv.FormatBool(cfg.DefReportOnly) + ". A2S Timeout => " + strconv.Itoa(cfg.DefA2STimeout) + ". Mentions => " + cfg.DefMentions + ".")
+		fmt.Printf("[D2] Config default server values. Enable => %t. Threshold => %d. Count => %d. Interval => %d. Timeout => %d. Max Detects => %d. Cooldown => %d. Mentions => %s.", cfg.DefEnable, cfg.DefThreshold, cfg.DefCount, cfg.DefInterval, cfg.DefTimeout, cfg.DefMaxDetects, cfg.DefCooldown, cfg.DefMentions)
 	}
 
 	// Check if we want to automatically add servers.
