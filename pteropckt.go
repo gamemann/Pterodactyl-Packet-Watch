@@ -34,7 +34,7 @@ func main() {
 
 	// Level 2 debug.
 	if cfg.DebugLevel > 1 {
-		fmt.Printf("[D2] Config default server values. Enable => %t. Threshold => %d. Count => %d. Interval => %d. Timeout => %d. Max Detects => %d. Cooldown => %d. Mentions => %s.", cfg.DefEnable, cfg.DefThreshold, cfg.DefCount, cfg.DefInterval, cfg.DefTimeout, cfg.DefMaxDetects, cfg.DefCooldown, cfg.DefMentions)
+		fmt.Printf("[D2] Config default server values. Enable => %t. Threshold => %d. Count => %d. Interval => %d. Timeout => %d. Max Detects => %d. Cooldown => %d. Mentions => %s.\n", cfg.DefEnable, cfg.DefThreshold, cfg.DefCount, cfg.DefInterval, cfg.DefTimeout, cfg.DefMaxDetects, cfg.DefCooldown, cfg.DefMentions)
 	}
 
 	// Check if we want to automatically add servers.
