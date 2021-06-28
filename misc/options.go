@@ -21,7 +21,7 @@ func HandleMisc(cfg *config.Config, srv *config.Server, pckt *config.Packet, avg
 			// Handle web hooks.
 			if v.Type == "webhook" {
 				// Set defaults.
-				contentpre := "**High Latency**\n- **Server Name** => {NAME}\n- **Packet Name** => {PCKTNAME}\n- **Avg Latency** => {AVG}ms\n- **Max Latency** => {MAX}\n- **Min Latency** => {MIN}\n- **Detects** => {DETECTS}/{MAXDETECTS}.\n- **Mentions** => {MENTIONS}\n\nScanning again in *{COOLDOWN}* seconds."
+				contentpre := "**High Latency**\n- **Server Name** => {NAME}\n- **Packet Name** => {PCKTNAME}\n- **Avg Latency** => {AVG}ms\n- **Max Latency** => {MAX}ms\n- **Min Latency** => {MIN}ms\n- **Detects** => {DETECTS}/{MAXDETECTS}.\n- **Mentions** => {MENTIONS}\n\nScanning again in *{COOLDOWN}* seconds."
 				username := "Pteropacket"
 				avatarurl := ""
 				allowedmentions := AllowMentions{
