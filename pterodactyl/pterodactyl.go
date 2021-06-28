@@ -151,12 +151,12 @@ func AddServers(cfg *config.Config) bool {
 						}
 
 						// Check for IP override.
-						if vari["env_variable"].(string) == "PTEROPACKET_IP" {
+						if vari["env_variable"].(string) == "PTEROPCKT_IP" {
 							sta.IP = val
 						}
 
 						// Check for port override.
-						if vari["env_variable"].(string) == "PTEROPACKET_PORT" {
+						if vari["env_variable"].(string) == "PTEROPCKT_PORT" {
 							tmp, err := strconv.ParseUint(val, 10, 16)
 
 							if err == nil {
@@ -165,7 +165,7 @@ func AddServers(cfg *config.Config) bool {
 						}
 
 						// Check for threshold override.
-						if vari["env_variable"].(string) == "PTEROPACKET_THRESHOLD" {
+						if vari["env_variable"].(string) == "PTEROPCKT_THRESHOLD" {
 							tmp, _ := strconv.ParseUint(val, 10, 16)
 
 							if err == nil {
@@ -174,7 +174,7 @@ func AddServers(cfg *config.Config) bool {
 						}
 
 						// Check for count override.
-						if vari["env_variable"].(string) == "PTEROPACKET_COUNT" {
+						if vari["env_variable"].(string) == "PTEROPCKT_COUNT" {
 							tmp, _ := strconv.ParseUint(val, 10, 16)
 
 							if err == nil {
@@ -183,7 +183,7 @@ func AddServers(cfg *config.Config) bool {
 						}
 
 						// Check for interval override.
-						if vari["env_variable"].(string) == "PTEROPACKET_INTERVAL" {
+						if vari["env_variable"].(string) == "PTEROPCKT_INTERVAL" {
 							tmp, _ := strconv.ParseUint(val, 10, 16)
 
 							if err == nil {
@@ -192,7 +192,7 @@ func AddServers(cfg *config.Config) bool {
 						}
 
 						// Check for timeout override.
-						if vari["env_variable"].(string) == "PTEROPACKET_TIMEOUT" {
+						if vari["env_variable"].(string) == "PTEROPCKT_TIMEOUT" {
 							tmp, _ := strconv.ParseUint(val, 10, 16)
 
 							if err == nil {
@@ -201,7 +201,7 @@ func AddServers(cfg *config.Config) bool {
 						}
 
 						// Check for packets override.
-						if vari["env_variable"].(string) == "PTEROPACKET_PACKETS" {
+						if vari["env_variable"].(string) == "PTEROPCKT_PACKETS" {
 							err := json.Unmarshal([]byte(val), &cfg.Servers[z].Packets)
 
 							if err != nil {
@@ -210,12 +210,12 @@ func AddServers(cfg *config.Config) bool {
 						}
 
 						// Check for mentions override.
-						if vari["env_variable"].(string) == "PTEROPACKET_MENTIONS" {
+						if vari["env_variable"].(string) == "PTEROPCKT_MENTIONS" {
 							sta.Mentions = val
 						}
 
 						// Check for disable override.
-						if vari["env_variable"].(string) == "PTEROPACKET_DISABLE" {
+						if vari["env_variable"].(string) == "PTEROPCKT_DISABLE" {
 							disable, _ := strconv.Atoi(val)
 
 							if disable > 0 {
