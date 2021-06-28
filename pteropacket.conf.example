@@ -12,7 +12,7 @@
                         "packets": [
                                 {
                                         "name": "A2S Info",
-                                        "data": "FF FF FF FF 54 53 6F 75 72 63 65 20 45 6E 67 69 6E 65 20 51 75 65 72 79 00",
+                                        "data": "FFFFFFFF54536F7572636520456E67696E6520517565727900",
                                         "threshold": 5
                                 }
                         ]
@@ -25,7 +25,7 @@
                         "packets": [
                                 {
                                         "name": "A2S Info",
-                                        "data": "FF FF FF FF 54 53 6F 75 72 63 65 20 45 6E 67 69 6E 65 20 51 75 65 72 79 00",
+                                        "data": "FFFFFFFF54536F7572636520456E67696E6520517565727900",
                                         "threshold": 5
                                 }
                         ]
