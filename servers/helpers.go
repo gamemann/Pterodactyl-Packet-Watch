@@ -41,6 +41,5 @@ func RemoveServer(cfg *config.Config, idx int) {
 }
 
 func RemoveStat(t *[]uint32, idx int) {
-	copy((*t)[idx:], (*t)[idx+1:])
-	*t = (*t)[:len(*t)-1]
+	*t = append((*t)[:idx], (*t)[idx+1:]...)
 }

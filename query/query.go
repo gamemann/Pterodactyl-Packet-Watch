@@ -48,6 +48,7 @@ func CheckResponse(conn *net.UDPConn, timeout uint) bool {
 	_, _, err := conn.ReadFromUDP(buffer)
 
 	if err != nil {
+		fmt.Println(err)
 		return false
 	}
 

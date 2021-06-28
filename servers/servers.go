@@ -52,32 +52,32 @@ func ServerWatch(srv *config.Server, pckt *config.Packet, timer *time.Ticker, la
 			query.SendRequest(conn, data)
 
 			if cfg.DebugLevel > 2 {
-				fmt.Printf("[D2] Packet %s:%d:%s (%s) sent. Request data => % x\n", srv.IP, srv.Port, srv.UID, srv.Name, pckt.Request)
+				fmt.Printf("[D2] Packet %s:%d:%s (%s) sent. Request data => % x\n", srv.IP, srv.Port, srv.UID, srv.Name, data)
 			}
 
 			// Send the request and retrieve latency.
 			var latency uint32
-			var start uint32
-			var stop uint32
 
-			var ts time.Time
-
-			start = uint32(time.Since(ts).Milliseconds())
+			start := time.Now()
 			resp := query.CheckResponse(conn, pckt.Timeout)
-			stop = uint32(time.Since(ts).Milliseconds())
+			stop := time.Since(start)
 
 			if !resp {
 				if cfg.DebugLevel > 1 {
-					fmt.Printf("[D2] Request timed out for %s:%d:%s (%s).\n", srv.IP, srv.Port, srv.UID, srv.Name)
+					fmt.Printf("[D2] Request timed out for %s:%d:%s (%s). Timeout => %d.\n", srv.IP, srv.Port, srv.UID, srv.Name, pckt.Timeout)
 				}
 
 				continue
 			} else {
-				latency = stop - start
+				latency = uint32(stop.Milliseconds())
 			}
 
 			// Add into stats.
 			*laststats = append(*laststats, latency)
+
+			if cfg.DebugLevel > 1 {
+				fmt.Printf("[D2] %s:%d:%s (%s). Stats => %v.\n", srv.IP, srv.Port, srv.UID, srv.Name, *laststats)
+			}
 
 			if uint(len(*laststats)) < pckt.Count/2 {
 				continue
@@ -104,13 +104,17 @@ func ServerWatch(srv *config.Server, pckt *config.Packet, timer *time.Ticker, la
 
 			*avglatency = uint32(sum / uint64(len(*laststats)))
 
+			if cfg.DebugLevel > 1 {
+				fmt.Printf("[D2] %s:%d:%s (%s). Average Latency => %d.\n", srv.IP, srv.Port, srv.UID, srv.Name, *avglatency)
+			}
+
 			// Check average latency.
 			if *avglatency > pckt.Threshold {
 				// Increment detect count.
 				*detects++
 
 				if cfg.DebugLevel > 1 {
-					fmt.Printf("[D2] %s:%d:%d (%s). Detects => %d.\n", srv.IP, srv.Port, srv.UID, srv.Name, *detects)
+					fmt.Printf("[D2] %s:%d:%s (%s). Detects => %d.\n", srv.IP, srv.Port, srv.UID, srv.Name, *detects)
 				}
 
 				// Check if we should report this.
@@ -208,27 +212,27 @@ func HandleServers(cfg *config.Config, update bool) {
 
 		// Set defaults.
 		if srv.Threshold < 1 {
-			srv.Threshold = cfg.DefThreshold
+			cfg.Servers[i].Threshold = cfg.DefThreshold
 		}
 
 		if srv.Count < 1 {
-			srv.Count = cfg.DefCount
+			cfg.Servers[i].Count = cfg.DefCount
 		}
 
 		if srv.Interval < 1 {
-			srv.Interval = cfg.DefInterval
+			cfg.Servers[i].Interval = cfg.DefInterval
 		}
 
 		if srv.Timeout < 1 {
-			srv.Timeout = cfg.DefTimeout
+			cfg.Servers[i].Timeout = cfg.DefTimeout
 		}
 
 		if srv.MaxDetects < 1 {
-			srv.MaxDetects = cfg.DefMaxDetects
+			cfg.Servers[i].MaxDetects = cfg.DefMaxDetects
 		}
 
 		if srv.Cooldown < 1 {
-			srv.Cooldown = cfg.DefCooldown
+			cfg.Servers[i].Cooldown = cfg.DefCooldown
 		}
 
 		// Create tuple.
@@ -240,28 +244,31 @@ func HandleServers(cfg *config.Config, update bool) {
 		for pid, pckt := range cfg.Servers[i].Packets {
 			// Set defaults.
 			if pckt.Threshold < 1 {
-				pckt.Threshold = srv.Threshold
+				cfg.Servers[i].Packets[pid].Threshold = cfg.Servers[i].Threshold
 			}
 
 			if pckt.Count < 1 {
-				pckt.Count = srv.Count
+				cfg.Servers[i].Packets[pid].Count = cfg.Servers[i].Count
 			}
 
 			if pckt.Interval < 1 {
-				pckt.Interval = srv.Interval
+				cfg.Servers[i].Packets[pid].Interval = cfg.Servers[i].Interval
 			}
 
 			if pckt.Timeout < 1 {
-				pckt.Timeout = srv.Timeout
+				cfg.Servers[i].Packets[pid].Timeout = cfg.Servers[i].Timeout
 			}
 
 			if pckt.MaxDetects < 1 {
-				pckt.MaxDetects = srv.MaxDetects
+				cfg.Servers[i].Packets[pid].MaxDetects = cfg.Servers[i].MaxDetects
 			}
 
 			if pckt.Cooldown < 1 {
-				pckt.Cooldown = srv.Cooldown
+				cfg.Servers[i].Packets[pid].Cooldown = srv.Cooldown
 			}
+
+			// Reassign.
+			pckt = cfg.Servers[i].Packets[pid]
 
 			// Specify packet-specific variables.
 			var laststats []uint32
@@ -280,7 +287,7 @@ func HandleServers(cfg *config.Config, update bool) {
 			}
 
 			if cfg.DebugLevel > 0 && !update {
-				fmt.Printf("[D1] Adding packet %s:%d:%s:d (%s). Threshold => %d. Count => %d. Interval => %d. Timeout => %d. Request data => % x.\n", srv.IP, srv.Port, srv.UID, pid, pckt.Threshold, pckt.Count, pckt.Interval, pckt.Timeout, pckt.Request)
+				fmt.Printf("[D1] Adding packet %s:%d:%s:%d (%s). Threshold => %d. Count => %d. Interval => %d. Timeout => %d. Request data => % x.\n", srv.IP, srv.Port, srv.UID, pid, srv.Name, pckt.Threshold, pckt.Count, pckt.Interval, pckt.Timeout, pckt.Request)
 			}
 
 			// Let's create the connection now.
