@@ -14,8 +14,8 @@ import (
 )
 
 func main() {
-	// Look for 'cfg' flag in command line arguments (default path: /etc/pteropacket/pteropacket.conf).
-	configFile := flag.String("cfg", "/etc/pteropacket/pteropacket.conf", "The path to the Pterowatch config file.")
+	// Look for 'cfg' flag in command line arguments (default path: /etc/pteropckt/pteropcktconf).
+	configFile := flag.String("cfg", "/etc/pteropckt/pteropckt.conf", "The path to the Pterowatch config file.")
 	flag.Parse()
 
 	// Create config struct.
