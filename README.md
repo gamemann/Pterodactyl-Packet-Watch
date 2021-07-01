@@ -169,6 +169,7 @@ The following strings are replaced inside of the `contents` string before the we
 * `{TIMEOUT}` => The packet's configured timeout.
 * `{MAXDETECTS}` => The packet's configured max detects.
 * `{COOLDOWN}` => The packet's configured cooldown.
+* `{LASTSTATS}` => An array of the the latency stats.
 * `{MENTIONS}` => If there are mentions, it will print them in `<id>, ...` format in this replacement.
 
 #### Defaults
