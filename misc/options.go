@@ -9,7 +9,7 @@ import (
 	"github.com/gamemann/Pterodactyl-Packet-Watch/config"
 )
 
-func HandleMisc(cfg *config.Config, srv *config.Server, pckt *config.Packet, avglatency uint32, maxlatency uint32, minlatency uint32, detects uint) {
+func HandleMisc(cfg *config.Config, srv *config.Server, pckt *config.Packet, avglatency uint32, maxlatency uint32, minlatency uint32, detects uint, laststats []uint32) {
 	// Look for Misc options.
 	if len(cfg.Misc) > 0 {
 		for i, v := range cfg.Misc {
@@ -166,7 +166,7 @@ func HandleMisc(cfg *config.Config, srv *config.Server, pckt *config.Packet, avg
 
 				// Replace variables in strings.
 				contents := contentpre
-				FormatContents(app, &contents, avglatency, maxlatency, minlatency, detects, srv, pckt, mentionstr)
+				FormatContents(app, &contents, avglatency, maxlatency, minlatency, detects, laststats, srv, pckt, mentionstr)
 
 				// Level 3 debug.
 				if cfg.DebugLevel > 2 {

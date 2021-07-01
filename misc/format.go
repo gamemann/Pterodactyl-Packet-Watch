@@ -1,13 +1,14 @@
 package misc
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/gamemann/Pterodactyl-Packet-Watch/config"
 )
 
-func FormatContents(app string, formatstr *string, avglatency uint32, maxlatency uint32, minlatency uint32, detects uint, srv *config.Server, pckt *config.Packet, mentionstr string) {
+func FormatContents(app string, formatstr *string, avglatency uint32, maxlatency uint32, minlatency uint32, detects uint, laststats []uint32, srv *config.Server, pckt *config.Packet, mentionstr string) {
 	*formatstr = strings.ReplaceAll(*formatstr, "{IP}", srv.IP)
 	*formatstr = strings.ReplaceAll(*formatstr, "{PORT}", strconv.FormatUint(uint64(srv.Port), 10))
 	*formatstr = strings.ReplaceAll(*formatstr, "{UID}", srv.UID)
@@ -24,4 +25,9 @@ func FormatContents(app string, formatstr *string, avglatency uint32, maxlatency
 	*formatstr = strings.ReplaceAll(*formatstr, "{MIN}", strconv.FormatUint(uint64(minlatency), 10))
 	*formatstr = strings.ReplaceAll(*formatstr, "{DETECTS}", strconv.FormatUint(uint64(detects), 10))
 	*formatstr = strings.ReplaceAll(*formatstr, "{MENTIONS}", mentionstr)
+
+	// Format last stats.
+	laststr := fmt.Sprintf("%v", laststats)
+
+	*formatstr = strings.ReplaceAll(*formatstr, "{LASTSTATS}", laststr)
 }

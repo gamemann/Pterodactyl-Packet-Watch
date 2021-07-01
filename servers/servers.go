@@ -128,7 +128,7 @@ func ServerWatch(srv *config.Server, pckt *config.Packet, timer *time.Ticker, la
 						fmt.Printf("[D1] Reporting %s:%d:%s (%s). Average latency => %dms. Max latency => %dms. Min latency => %dms. Detects => %d.\n", srv.IP, srv.Port, srv.UID, srv.Name, *avglatency, *maxlatency, *minlatency, *detects)
 					}
 
-					events.OnDetect(cfg, srv, pckt, *avglatency, *maxlatency, *minlatency, *detects)
+					events.OnDetect(cfg, srv, pckt, *avglatency, *maxlatency, *minlatency, *detects, *laststats)
 				}
 			} else {
 				// Reset everything.
