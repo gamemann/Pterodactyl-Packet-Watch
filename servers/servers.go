@@ -111,15 +111,15 @@ func ServerWatch(srv *config.Server, pckt *config.Packet, timer *time.Ticker, la
 
 			// Check average latency.
 			if *avglatency > pckt.Threshold {
-				// Increment detect count.
-				*detects++
-
 				if cfg.DebugLevel > 1 {
 					fmt.Printf("[D2] %s:%d:%s (%s). Detects => %d.\n", srv.IP, srv.Port, srv.UID, srv.Name, *detects)
 				}
 
 				// Check if we should report this.
 				if *detects < pckt.MaxDetects && time.Now().Unix() > nextscan {
+					// Increment detect count.
+					*detects++
+
 					// Update scan time.
 					nextscan = time.Now().Unix() + int64(pckt.Cooldown)
 
