@@ -20,6 +20,7 @@ type Stats struct {
 	MaxLatency *uint32
 	MinLatency *uint32
 	Detects    *uint
+	NextScan   *int64
 }
 
 type TickerHolder struct {

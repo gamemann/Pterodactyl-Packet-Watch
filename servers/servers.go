@@ -16,9 +16,7 @@ import (
 var tickers []TickerHolder
 
 // Timer function.
-func ServerWatch(srv *config.Server, pckt *config.Packet, timer *time.Ticker, laststats *[]uint32, avglatency *uint32, maxlatency *uint32, minlatency *uint32, detects *uint, conn *net.UDPConn, cfg *config.Config, destroy *chan bool) {
-	var nextscan int64
-
+func ServerWatch(srv *config.Server, pckt *config.Packet, timer *time.Ticker, laststats *[]uint32, avglatency *uint32, maxlatency *uint32, minlatency *uint32, detects *uint, nextscan *int64, conn *net.UDPConn, cfg *config.Config, destroy *chan bool) {
 	data, err := hex.DecodeString(pckt.Request)
 
 	if err != nil {
@@ -116,12 +114,12 @@ func ServerWatch(srv *config.Server, pckt *config.Packet, timer *time.Ticker, la
 				}
 
 				// Check if we should report this.
-				if *detects < pckt.MaxDetects && time.Now().Unix() > nextscan {
+				if *detects < pckt.MaxDetects && time.Now().Unix() > *nextscan {
 					// Increment detect count.
 					*detects++
 
 					// Update scan time.
-					nextscan = time.Now().Unix() + int64(pckt.Cooldown)
+					*nextscan = time.Now().Unix() + int64(pckt.Cooldown)
 
 					// Debug.
 					if cfg.DebugLevel > 0 {
@@ -133,7 +131,7 @@ func ServerWatch(srv *config.Server, pckt *config.Packet, timer *time.Ticker, la
 			} else {
 				// Reset everything.
 				*detects = 0
-				nextscan = 0
+				*nextscan = 0
 				*maxlatency = 0
 				*minlatency = 0
 			}
@@ -183,6 +181,7 @@ func HandleServers(cfg *config.Config, update bool) {
 						MaxLatency: ticker.Stats.MaxLatency,
 						MinLatency: ticker.Stats.MinLatency,
 						Detects:    ticker.Stats.Detects,
+						NextScan:   ticker.Stats.NextScan,
 					}
 
 				}
@@ -283,6 +282,7 @@ func HandleServers(cfg *config.Config, update bool) {
 			var maxlatency uint32 = 0
 			var minlatency uint32 = 0
 			var detects uint = 0
+			var nextscan int64 = 0
 
 			// Replace stats with old ticker's stats.
 			if stat, ok := stats[srvt]; ok {
@@ -291,6 +291,7 @@ func HandleServers(cfg *config.Config, update bool) {
 				maxlatency = *stat.MaxLatency
 				minlatency = *stat.MinLatency
 				detects = *stat.Detects
+				nextscan = *stat.NextScan
 			}
 
 			if cfg.DebugLevel > 0 && !update {
@@ -316,7 +317,7 @@ func HandleServers(cfg *config.Config, update bool) {
 
 			// Create repeating timer.
 			ticker := time.NewTicker(time.Duration(pckt.Interval) * time.Second)
-			go ServerWatch(&cfg.Servers[i], &cfg.Servers[i].Packets[pid], ticker, &laststats, &avglatency, &maxlatency, &minlatency, &detects, conn, cfg, &destroyer)
+			go ServerWatch(&cfg.Servers[i], &cfg.Servers[i].Packets[pid], ticker, &laststats, &avglatency, &maxlatency, &minlatency, &detects, &nextscan, conn, cfg, &destroyer)
 
 			// Add ticker to global list.
 			var newticker TickerHolder
@@ -329,6 +330,7 @@ func HandleServers(cfg *config.Config, update bool) {
 			newticker.Stats.MaxLatency = &maxlatency
 			newticker.Stats.MinLatency = &minlatency
 			newticker.Stats.Detects = &detects
+			newticker.Stats.NextScan = &nextscan
 
 			tickers = append(tickers, newticker)
 		}
