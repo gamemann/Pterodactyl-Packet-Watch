@@ -270,7 +270,7 @@ func HandleServers(cfg *config.Config, update bool) {
 			}
 
 			if pckt.Cooldown < 1 {
-				cfg.Servers[i].Packets[pid].Cooldown = srv.Cooldown
+				cfg.Servers[i].Packets[pid].Cooldown = cfg.Servers[i].Cooldown
 			}
 
 			// Reassign.
