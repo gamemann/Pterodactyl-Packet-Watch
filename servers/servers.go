@@ -134,6 +134,8 @@ func ServerWatch(srv *config.Server, pckt *config.Packet, timer *time.Ticker, la
 				// Reset everything.
 				*detects = 0
 				nextscan = 0
+				*maxlatency = 0
+				*minlatency = 0
 			}
 
 		case <-*destroy:
