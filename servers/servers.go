@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gamemann/Pterodactyl-Packet-Watch/config"
@@ -17,7 +18,7 @@ var tickers []TickerHolder
 
 // Timer function.
 func ServerWatch(srv *config.Server, pckt *config.Packet, timer *time.Ticker, laststats *[]uint32, avglatency *uint32, maxlatency *uint32, minlatency *uint32, detects *uint, nextscan *int64, conn *net.UDPConn, cfg *config.Config, destroy *chan bool) {
-	data, err := hex.DecodeString(pckt.Request)
+	data, err := hex.DecodeString(strings.ReplaceAll(pckt.Request, " ", ""))
 
 	if err != nil {
 		fmt.Println("Failed to parse data => " + pckt.Request)
